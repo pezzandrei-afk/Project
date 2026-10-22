@@ -1,12 +1,24 @@
 const GAME_CODE_PATTERN = /^[A-Z0-9]{10}$/
+const PLACEHOLDER_HOSTS = new Set(['your-site.pages.dev'])
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1'])
 
 export function getPublicAppUrl() {
   const configuredUrl = import.meta.env.VITE_PUBLIC_APP_URL?.trim()
+  return resolvePublicAppUrl(configuredUrl, window.location)
+}
+
+export function resolvePublicAppUrl(
+  configuredUrl: string | undefined,
+  currentLocation: Pick<Location, 'protocol' | 'hostname' | 'origin'>,
+) {
   if (configuredUrl) {
     try {
       const url = new URL(configuredUrl)
-      if (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(url.hostname))) {
+      if (url.protocol !== 'https:' && !(url.protocol === 'http:' && LOCAL_HOSTS.has(url.hostname))) {
         return null
+      }
+      if (PLACEHOLDER_HOSTS.has(url.hostname.toLowerCase())) {
+        return getCurrentPublicOrigin(currentLocation)
       }
       return url.origin
     } catch {
@@ -14,15 +26,15 @@ export function getPublicAppUrl() {
     }
   }
 
-  if (
-    window.location.protocol === 'capacitor:' ||
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1'
-  ) {
+  return getCurrentPublicOrigin(currentLocation)
+}
+
+function getCurrentPublicOrigin(currentLocation: Pick<Location, 'protocol' | 'hostname' | 'origin'>) {
+  if (currentLocation.protocol === 'capacitor:' || LOCAL_HOSTS.has(currentLocation.hostname)) {
     return null
   }
 
-  return window.location.origin
+  return currentLocation.origin
 }
 
 export function buildGameSpectatorUrl(baseUrl: string, gameCode: string) {

@@ -1,6 +1,26 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildEventSpectatorUrl, buildGameSpectatorUrl } from '../src/publicAppUrl.ts'
+import { buildEventSpectatorUrl, buildGameSpectatorUrl, resolvePublicAppUrl } from '../src/publicAppUrl.ts'
+
+const deployedLocation = {
+  protocol: 'https:',
+  hostname: 'project-cxa.pages.dev',
+  origin: 'https://project-cxa.pages.dev',
+} as Location
+
+test('placeholder deployment URL falls back to the current public site', () => {
+  assert.equal(
+    resolvePublicAppUrl('https://your-site.pages.dev', deployedLocation),
+    'https://project-cxa.pages.dev',
+  )
+})
+
+test('configured public URL is preserved when it is not a placeholder', () => {
+  assert.equal(
+    resolvePublicAppUrl('https://scoreline.pages.dev', deployedLocation),
+    'https://scoreline.pages.dev',
+  )
+})
 
 test('event spectator links use the stable event route and event code', () => {
   assert.equal(
