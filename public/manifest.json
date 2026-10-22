@@ -1,0 +1,18 @@
+{
+  "name": "Scoreline — Live Mobile Scoreboard",
+  "short_name": "Scoreline",
+  "description": "A live scoreboard everyone can follow.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/scoreline-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

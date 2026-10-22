@@ -1,0 +1,20 @@
+{
+  "name": "Scoreline Live Scoreboard",
+  "short_name": "Scoreline",
+  "description": "Live two-team scoreboard for games and tournaments. Real-time scores and manager console.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "categories": ["sports", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
