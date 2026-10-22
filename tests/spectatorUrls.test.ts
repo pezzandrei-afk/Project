@@ -7,10 +7,29 @@ const deployedLocation = {
   hostname: 'project-cxa.pages.dev',
   origin: 'https://project-cxa.pages.dev',
 } as Location
+const androidAppLocation = {
+  protocol: 'https:',
+  hostname: 'localhost',
+  origin: 'https://localhost',
+} as Location
 
 test('placeholder deployment URL falls back to the current public site', () => {
   assert.equal(
     resolvePublicAppUrl('https://your-site.pages.dev', deployedLocation),
+    'https://project-cxa.pages.dev',
+  )
+})
+
+test('Android app uses the production website when the configured URL is a placeholder', () => {
+  assert.equal(
+    resolvePublicAppUrl('https://your-site.pages.dev', androidAppLocation, true),
+    'https://project-cxa.pages.dev',
+  )
+})
+
+test('Android app uses the production website when no public URL was configured', () => {
+  assert.equal(
+    resolvePublicAppUrl(undefined, androidAppLocation, true),
     'https://project-cxa.pages.dev',
   )
 })

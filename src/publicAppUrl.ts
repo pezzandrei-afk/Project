@@ -1,15 +1,19 @@
+import { Capacitor } from '@capacitor/core'
+
 const GAME_CODE_PATTERN = /^[A-Z0-9]{10}$/
 const PLACEHOLDER_HOSTS = new Set(['your-site.pages.dev'])
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1'])
+const DEFAULT_PUBLIC_APP_URL = 'https://project-cxa.pages.dev'
 
 export function getPublicAppUrl() {
   const configuredUrl = import.meta.env.VITE_PUBLIC_APP_URL?.trim()
-  return resolvePublicAppUrl(configuredUrl, window.location)
+  return resolvePublicAppUrl(configuredUrl, window.location, Capacitor.isNativePlatform())
 }
 
 export function resolvePublicAppUrl(
   configuredUrl: string | undefined,
   currentLocation: Pick<Location, 'protocol' | 'hostname' | 'origin'>,
+  isNativeApp = false,
 ) {
   if (configuredUrl) {
     try {
@@ -18,7 +22,7 @@ export function resolvePublicAppUrl(
         return null
       }
       if (PLACEHOLDER_HOSTS.has(url.hostname.toLowerCase())) {
-        return getCurrentPublicOrigin(currentLocation)
+        return getCurrentPublicOrigin(currentLocation) ?? (isNativeApp ? DEFAULT_PUBLIC_APP_URL : null)
       }
       return url.origin
     } catch {
@@ -26,7 +30,7 @@ export function resolvePublicAppUrl(
     }
   }
 
-  return getCurrentPublicOrigin(currentLocation)
+  return getCurrentPublicOrigin(currentLocation) ?? (isNativeApp ? DEFAULT_PUBLIC_APP_URL : null)
 }
 
 function getCurrentPublicOrigin(currentLocation: Pick<Location, 'protocol' | 'hostname' | 'origin'>) {

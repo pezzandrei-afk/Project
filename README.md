@@ -141,7 +141,7 @@ Set-Location android
 
 The debug APK is created at `android\app\build\outputs\apk\debug\app-debug.apk`. Install it on an Android device for testing, create a game, and scan the spectator QR with a second device.
 
-The current direct-download APK is [`public/downloads/scoreline-manager.apk`](./public/downloads/scoreline-manager.apk), served at `https://project-cxa.pages.dev/downloads/scoreline-manager.apk` after the Pages deployment completes. It is debug-signed with the development PC's Android debug key, so keep using that same key for updates. This APK is for direct testing/sideloading, not Google Play; a Play Store release needs a properly managed release signing key.
+The current direct-download APK is [`public/downloads/scoreline-manager.apk`](./public/downloads/scoreline-manager.apk), served at `https://project-cxa.pages.dev/downloads/scoreline-manager.apk` after the Pages deployment completes. It is debug-signed with the development PC's Android debug key, so keep using that same key for updates. The APK uses `VITE_PUBLIC_APP_URL` for spectator links and falls back to the production website if the Android build has a placeholder or missing URL. This APK is for direct testing/sideloading, not Google Play; a Play Store release needs a properly managed release signing key.
 
 ## Useful commands
 
