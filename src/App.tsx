@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent, type RefObject } from 'react'
 import {
   Activity,
   ArrowLeft,
@@ -6,6 +6,7 @@ import {
   Check,
   ChevronDown,
   Copy,
+  Download,
   ExternalLink,
   History,
   LockKeyhole,
@@ -23,6 +24,7 @@ import {
   Zap,
 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
+import { Capacitor } from '@capacitor/core'
 import { QRCodeSVG } from 'qrcode.react'
 import { supabase } from './supabase'
 import type { GameEventRow, GameRow, GameStatus, ScoreboardEventRow } from './database.types'
@@ -30,6 +32,7 @@ import { TEAM_COLORS, TEAM_LOGOS } from './constants'
 import { EventDashboard, EventManagerScreen } from './EventScreens'
 import { generateCode } from './gameCodes'
 import { buildEventSpectatorUrl, buildGameSpectatorUrl, getPublicAppUrl } from './publicAppUrl'
+import { downloadQrCodePng } from './downloadQrCode'
 import './App.css'
 
 export type Game = GameRow
@@ -503,6 +506,11 @@ function HomeScreen({ navigate, user, authLoading, passwordRecovery, onPasswordR
           </span>
         </a>
         <div className="topbar-right">
+          {!Capacitor.isNativePlatform() && (
+            <a className="button button-outline apk-download-link" href="/downloads/scoreline-manager.apk" download>
+              <Download size={15} /> Android app
+            </a>
+          )}
           <span className="no-account">
             <ShieldCheck size={15} /> Mobile & APK Ready
           </span>
@@ -720,6 +728,7 @@ function GameScreen({ code, mode, navigate, backPath, shareUrlOverride, user = n
   const [copied, setCopied] = useState(false)
   const [managerRecoveryCopied, setManagerRecoveryCopied] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const qrRef = useRef<SVGSVGElement>(null)
   const publicAppUrl = getPublicAppUrl()
   const viewerUrl = shareUrlOverride ?? (publicAppUrl ? buildGameSpectatorUrl(publicAppUrl, code) : '')
 
@@ -1076,6 +1085,18 @@ function GameScreen({ code, mode, navigate, backPath, shareUrlOverride, user = n
     }
   }
 
+  async function downloadSpectatorQr() {
+    if (!qrRef.current) {
+      setError('The spectator QR is not ready to download yet.')
+      return
+    }
+    try {
+      await downloadQrCodePng(qrRef.current, `${shareUrlOverride !== undefined ? 'scoreline-event' : 'scoreline-game'}-${code}.png`)
+    } catch (downloadFailure) {
+      setError(`Could not download the spectator QR: ${downloadFailure instanceof Error ? downloadFailure.message : 'Unexpected image error.'}`)
+    }
+  }
+
   async function copyManagerRecoveryLink() {
     try {
       const baseUrl = getPublicAppUrl()
@@ -1238,12 +1259,14 @@ function GameScreen({ code, mode, navigate, backPath, shareUrlOverride, user = n
             keyInput={keyInput}
             managerRecoveryCopied={managerRecoveryCopied}
             viewerUrl={viewerUrl}
+            qrRef={qrRef}
             eventShare={shareUrlOverride !== undefined}
             saving={saving}
             verifyingKey={verifyingKey}
             onKeyChange={setKeyInput}
             onKeySubmit={submitManagerKey}
             onCopyManagerRecovery={() => void copyManagerRecoveryLink()}
+            onDownloadQr={() => void downloadSpectatorQr()}
             onStatusChange={(status) => void updateGame({ status })}
             onResetScore={resetGameScore}
             onUndoLastScore={undoLastScore}
@@ -1724,12 +1747,14 @@ interface ManagerControlsProps {
   keyInput: string
   managerRecoveryCopied: boolean
   viewerUrl: string
+  qrRef: RefObject<SVGSVGElement | null>
   eventShare: boolean
   saving: boolean
   verifyingKey: boolean
   onKeyChange: (value: string) => void
   onKeySubmit: (event: FormEvent<HTMLFormElement>) => void
   onCopyManagerRecovery: () => void
+  onDownloadQr: () => void
   onStatusChange: (status: GameStatus) => void
   onResetScore: () => void
   onUndoLastScore: () => void
@@ -1746,12 +1771,14 @@ function ManagerControls({
   keyInput,
   managerRecoveryCopied,
   viewerUrl,
+  qrRef,
   eventShare,
   saving,
   verifyingKey,
   onKeyChange,
   onKeySubmit,
   onCopyManagerRecovery,
+  onDownloadQr,
   onStatusChange,
   onResetScore,
   onUndoLastScore,
@@ -1827,7 +1854,8 @@ function ManagerControls({
               fgColor="#18211e"
               level="M"
               marginSize={1}
-              size={94}
+              size={256}
+              ref={qrRef}
               value={viewerUrl}
             />
           ) : (
@@ -1844,6 +1872,9 @@ function ManagerControls({
               <a className="text-link" href={viewerUrl} target="_blank" rel="noreferrer">
                 Open spectator view <ExternalLink size={13} />
               </a>
+              <button className="button button-outline download-qr-button" onClick={onDownloadQr} type="button">
+                <Download size={14} /> Download QR
+              </button>
             </>
           ) : (
             <span className="share-url-warning">Public viewer link unavailable in this APK build.</span>

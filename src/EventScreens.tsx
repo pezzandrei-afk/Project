@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { ArrowUpRight, CalendarDays, Copy, LogOut, Plus, QrCode, ShieldCheck, X } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, Copy, Download, LogOut, Plus, QrCode, ShieldCheck, X } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { supabase } from './supabase'
 import type { GameRow, ScoreboardEventRow } from './database.types'
 import { generateCode } from './gameCodes'
 import { buildEventSpectatorUrl, getPublicAppUrl } from './publicAppUrl'
+import { downloadQrCodePng } from './downloadQrCode'
 
 function isEmailNotConfirmed(error: unknown) {
   if (typeof error !== 'object' || error === null) return false
@@ -281,6 +282,7 @@ export function EventManagerScreen({ code, user, authLoading, navigate }: EventM
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [copied, setCopied] = useState(false)
+  const qrRef = useRef<SVGSVGElement>(null)
 
   const refresh = useCallback(async () => {
     if (!supabase) {
@@ -407,6 +409,18 @@ export function EventManagerScreen({ code, user, authLoading, navigate }: EventM
     }
   }
 
+  async function downloadEventQr() {
+    if (!qrRef.current) {
+      setError('The event QR is not ready to download yet.')
+      return
+    }
+    try {
+      await downloadQrCodePng(qrRef.current, `scoreline-event-${event?.code ?? code}.png`)
+    } catch (downloadFailure) {
+      setError(`Could not download the event QR: ${downloadFailure instanceof Error ? downloadFailure.message : 'Unexpected image error.'}`)
+    }
+  }
+
   if (authLoading || loading) return <main className="game-page"><section className="score-page-content"><div className="loading-card"><span className="spinner" /><p>Loading event…</p></div></section></main>
   if (!user) return <main className="game-page"><section className="score-page-content"><div className="unavailable-card"><h2>Manager sign-in required</h2><p>Sign in with the account that created this event.</p><button className="button button-dark" onClick={() => navigate('/')} type="button">Back to Scoreline</button></div></section></main>
   if (!event) return <main className="game-page"><section className="score-page-content"><div className="unavailable-card"><h2>Event unavailable</h2><p>{error}</p><button className="button button-dark" onClick={() => navigate('/')} type="button">Back to Scoreline</button></div></section></main>
@@ -430,7 +444,7 @@ export function EventManagerScreen({ code, user, authLoading, navigate }: EventM
 
         <section className="event-share-card">
           <div className="event-qr-wrap">
-            {spectatorUrl ? <QRCodeSVG bgColor="#ffffff" fgColor="#18211e" level="M" marginSize={1} size={118} value={spectatorUrl} /> : <QrCode size={34} />}
+            {spectatorUrl ? <QRCodeSVG ref={qrRef} bgColor="#ffffff" fgColor="#18211e" level="H" marginSize={2} size={256} value={spectatorUrl} /> : <QrCode size={34} />}
           </div>
           <div className="event-share-copy">
             <span className="small-label">ONE PERMANENT SPECTATOR QR</span>
@@ -439,6 +453,9 @@ export function EventManagerScreen({ code, user, authLoading, navigate }: EventM
             {spectatorUrl ? <code>{spectatorUrl}</code> : <span className="share-url-warning">Set VITE_PUBLIC_APP_URL to your deployed site URL, then restart the dev server.</span>}
             <button className="button button-outline" disabled={!spectatorUrl} onClick={() => void copySpectatorLink()} type="button">
               <Copy size={14} /> {copied ? 'Event link copied' : 'Copy spectator link'}
+            </button>
+            <button className="button button-outline" disabled={!spectatorUrl} onClick={() => void downloadEventQr()} type="button">
+              <Download size={14} /> Download event QR
             </button>
           </div>
         </section>

@@ -78,12 +78,12 @@ Then use two browser windows or devices to test both the single-game and event f
 1. In one window, create a scoreboard and confirm the manager console opens.
 2. Use +1, +2, and +3 and confirm the score updates; test **Undo last score**, **Reset 0-0**, and finish/resume.
 3. Edit team names, colors, and badges and confirm the updated scoreboard is visible.
-4. Copy the **spectator** link or scan its QR code in a second window. Confirm it shows live updates, has no manager controls or event history, and its Back button does not leave the current game.
+4. Copy the **spectator** link or scan its QR code in a second window. Test **Download QR** in the manager console and confirm the saved PNG scans to the public spectator page. Confirm the spectator page shows live updates, has no manager controls or event history, and its Back button does not leave the current game.
 5. Return to the manager window and use **Save recovery link**. Open that link in a private/incognito window and confirm the manager key restores manager access. Treat this link like a password.
 6. Return to the home page and check **My recent games** on the original browser/device.
 7. Create a manager account with an email address and password. If email confirmation is enabled, confirm it from the mailbox, then sign in.
 8. Create an event, add at least two games, and check that both appear in queue order.
-9. Copy or scan the event QR in the spectator window before starting a game. It should show a waiting message; leave it open.
+9. Download the event QR from the dashboard and scan it in the spectator window before starting a game. Confirm it opens the public event page and shows a waiting message; leave it open.
 10. In the manager event page, tap **Start game**. The already-open spectator event page should switch to that game automatically.
 11. Score, undo, and finish the game. Start the next queued game from the event page; the same spectator page should follow it without scanning again.
 12. On the deployed HTTPS site, use the browser's install option to install Scoreline. Confirm the service worker is registered and the app still loads its latest version after a redeploy.
@@ -139,7 +139,9 @@ Set-Location android
 .\gradlew.bat assembleDebug
 ```
 
-The debug APK is created at `android\app\build\outputs\apk\debug\app-debug.apk`. Install it on an Android device for testing, create a game, and scan the spectator QR with a second device. The APK is a debug build for testing; prepare a signed release build before distributing publicly.
+The debug APK is created at `android\app\build\outputs\apk\debug\app-debug.apk`. Install it on an Android device for testing, create a game, and scan the spectator QR with a second device.
+
+The current direct-download APK is [`public/downloads/scoreline-manager.apk`](./public/downloads/scoreline-manager.apk), served at `https://project-cxa.pages.dev/downloads/scoreline-manager.apk` after the Pages deployment completes. It is debug-signed with the development PC's Android debug key, so keep using that same key for updates. This APK is for direct testing/sideloading, not Google Play; a Play Store release needs a properly managed release signing key.
 
 ## Useful commands
 

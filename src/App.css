@@ -1425,6 +1425,10 @@
 }
 
 @media (max-width: 420px) {
+  .home-page > .topbar .no-account {
+    display: none;
+  }
+
   .no-account {
     font-size: 10px;
   }
