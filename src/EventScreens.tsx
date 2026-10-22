@@ -7,6 +7,13 @@ import type { GameRow, ScoreboardEventRow } from './database.types'
 import { generateCode } from './gameCodes'
 import { buildEventSpectatorUrl, getPublicAppUrl } from './publicAppUrl'
 
+function isEmailNotConfirmed(error: unknown) {
+  if (typeof error !== 'object' || error === null) return false
+  const code = 'code' in error ? error.code : ''
+  const message = 'message' in error ? error.message : ''
+  return code === 'email_not_confirmed' || (typeof message === 'string' && /email not confirmed/i.test(message))
+}
+
 interface EventDashboardProps {
   user: User | null
   authLoading: boolean
@@ -25,6 +32,7 @@ export function EventDashboard({ user, authLoading, passwordRecovery, onPassword
   const [busy, setBusy] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const [isPasswordReset, setIsPasswordReset] = useState(false)
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
@@ -71,14 +79,45 @@ export function EventDashboard({ user, authLoading, passwordRecovery, onPassword
           options: { emailRedirectTo: window.location.origin },
         })
         if (authError) throw authError
-        if (!data.session) setNotice('Check your email to confirm your account, then sign in here.')
+        if (!data.session) {
+          setAwaitingConfirmation(true)
+          setNotice('Account created. Check your inbox (and spam folder) for Supabase’s confirmation email. Confirm your address before signing in.')
+        }
       } else {
         const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
         if (authError) throw authError
       }
     } catch (authFailure) {
-      const action = isPasswordReset ? 'request a password reset' : isSignUp ? 'create account' : 'sign in'
-      setError(`Could not ${action}: ${authFailure instanceof Error ? authFailure.message : 'Unexpected authentication error.'}`)
+      if (isEmailNotConfirmed(authFailure)) {
+        setAwaitingConfirmation(true)
+        setError('Your email address is not confirmed yet. Open the confirmation email from Supabase, then return here to sign in.')
+      } else {
+        const action = isPasswordReset ? 'request a password reset' : isSignUp ? 'create account' : 'sign in'
+        setError(`Could not ${action}: ${authFailure instanceof Error ? authFailure.message : 'Unexpected authentication error.'}`)
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function resendConfirmationEmail() {
+    if (!supabase || !email.trim()) {
+      setError('Enter the email address you used to create your account.')
+      return
+    }
+    setBusy(true)
+    setError('')
+    setNotice('')
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim(),
+        options: { emailRedirectTo: window.location.origin },
+      })
+      if (resendError) throw resendError
+      setNotice('A new confirmation email was requested. Check your inbox and spam folder.')
+    } catch (resendFailure) {
+      setError(`Could not resend the confirmation email: ${resendFailure instanceof Error ? resendFailure.message : 'Unexpected authentication error.'}`)
     } finally {
       setBusy(false)
     }
@@ -174,6 +213,11 @@ export function EventDashboard({ user, authLoading, passwordRecovery, onPassword
         </form>
         {error && <p className="event-feedback event-feedback-error" role="alert"><X size={14} />{error}</p>}
         {notice && <p className="event-feedback">{notice}</p>}
+        {awaitingConfirmation && !isPasswordReset && (
+          <button className="event-auth-toggle" disabled={busy} onClick={() => void resendConfirmationEmail()} type="button">
+            {busy ? 'Sending confirmation…' : 'Resend confirmation email'}
+          </button>
+        )}
         {!isSignUp && !isPasswordReset && <button className="event-auth-toggle" onClick={() => { setIsPasswordReset(true); setError(''); setNotice('') }} type="button">Forgot password?</button>}
         <button className="event-auth-toggle" onClick={() => { setIsSignUp(!isSignUp); setIsPasswordReset(false); setError(''); setNotice('') }} type="button">
           {isSignUp ? 'Already have an account? Sign in' : isPasswordReset ? 'Back to sign in' : 'New manager? Create an account'}

@@ -654,7 +654,7 @@ function HomeScreen({ navigate, user, authLoading, passwordRecovery, onPasswordR
             <p className="setup-hint">
               <LockKeyhole size={14} />
               <span>
-                Live games need Supabase configured. Check <strong>.env.local</strong> and <strong>schema.sql</strong>.
+                Live games need a Supabase project URL and public key configured for this deployment.
               </span>
             </p>
           )}

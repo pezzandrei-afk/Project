@@ -36,9 +36,9 @@ Run them in order and check that each SQL Editor result reports success. The eve
 
 ### Enable manager accounts
 
-In Supabase, open **Authentication → Providers → Email** and ensure email/password sign-in is enabled. Keep email confirmation enabled if you want to verify manager email addresses; new managers must click the confirmation email before their first sign-in. Spectators do not use Supabase Auth.
+In Supabase, open **Authentication → Providers → Email** and ensure email/password sign-in is enabled. With email confirmation enabled, new managers must open the Supabase confirmation email and confirm their address before their first sign-in. If the email does not arrive, check spam and use **Resend confirmation email** on the Scoreline sign-in panel. Spectators do not use Supabase Auth.
 
-In **Authentication → URL Configuration**, set the **Site URL** to your deployed app URL. Add the local development URL (`http://localhost:5173`) and deployed app URL to **Redirect URLs**. If you use a preview deployment, add that URL too. The app sends confirmation and password-reset links back to the current app origin, so each origin must be allow-listed.
+In **Authentication → URL Configuration**, set the **Site URL** to `https://project-cxa.pages.dev` (or your custom production domain). Add `http://localhost:5173/**` and `https://project-cxa.pages.dev/**` to **Redirect URLs**. If you use a preview deployment, add its URL too. Confirmation and password-reset links return to the current app origin, so each origin must be allow-listed.
 
 The app needs the Supabase **Project URL** and a **publishable key** (or legacy anon key). In Supabase, find these in the project's **Connect** panel or **Project Settings → API**. The URL looks like `https://<project-id>.supabase.co`. The frontend key is public by design; never use a `service_role` or secret key in this app.
 
